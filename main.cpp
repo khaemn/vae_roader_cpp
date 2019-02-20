@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
     // auto input = get_mnist_image_as_tensor("1.jpg");
 
-    const auto model = fdeep::load_model("cl_model_yolike_roader.json");
+    const auto model = fdeep::load_model("mini_model_yolike_roader.json");
 
     cv::VideoCapture in_video = cv::VideoCapture("test-road-1.mp4");
     cv::Mat in_frame;
@@ -68,11 +68,9 @@ int main(int argc, char *argv[])
     {
         cv::imshow("Video", in_frame);
 
-        auto pred_input = to_vae_roader_input(in_frame);
-
         auto start = std::chrono::system_clock::now();
 
-        const auto result = model.predict({pred_input})[0]; // result is a vector of tensors!
+        const auto result = model.predict({to_vae_roader_input(in_frame)})[0]; // result is a vector of tensors!
 
         const cv::Mat res_image(cv::Size(result.shape().width_,
                                          result.shape().height_),
@@ -83,14 +81,15 @@ int main(int argc, char *argv[])
 
         cv::imshow("Result", res_image);
 
-        auto end = std::chrono::system_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        qDebug() << "Frame processed in" << elapsed.count() << "milliseconds";
 
         const auto key = cv::waitKey(5);
         if (key > 0) {
             break;
         }
+
+        auto end = std::chrono::system_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+        qDebug() << "Frame processed in" << elapsed.count() << "milliseconds";
     }
 
     in_video.release();
