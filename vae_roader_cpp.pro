@@ -14,11 +14,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    roaddetector.cpp
+    roaddetector.cpp \
+    recognizer.cpp
 RESOURCES += qml.qrc
 
 LIBS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
-# LIBS += -ldarknet.so
+INCLUDEPATH += ../darknet/src/
+INCLUDEPATH += ../darknet/include/
+LIBS += ../darknet/libdarknet.so
 
 QMAKE_LFLAGS_RELEASE -= -O1
 QMAKE_CXXFLAGS_RELEASE -= -O2
@@ -38,6 +41,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    roaddetector.h
+    roaddetector.h \
+    recognizer.h
 
 
