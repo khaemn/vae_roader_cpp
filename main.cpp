@@ -13,43 +13,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-
-fdeep::tensor5 to_vae_roader_input(const cv::Mat& input)
-{
-    cv::Mat greyed;
-    cv::cvtColor(input, greyed, CV_RGB2GRAY);
-    cv::resize(greyed, greyed, cv::Size(320, 180));
-//    const fdeep::tensor5 tensor =
-//            fdeep::tensor5_from_bytes(greyed.ptr(),
-//                                      greyed.rows, greyed.cols, greyed.channels());
-    return fdeep::tensor5_from_bytes(greyed.ptr(),
-                                     greyed.rows, greyed.cols, greyed.channels());;
-}
-
-fdeep::tensor5 get_mnist_image_as_tensor(const std::string& filename)
-{
-    const cv::Mat image1 = cv::imread(filename);
-    cv::Mat greyed;
-    cv::cvtColor(image1, greyed, CV_RGB2GRAY);
-
-    const fdeep::tensor5 tensor =
-            fdeep::tensor5_from_bytes(greyed.ptr(),
-                                      greyed.rows, greyed.cols, greyed.channels());
-
-    // choose the correct pixel type for cv::Mat (gray or RGB/BGR)
-    assert(tensor.shape().depth_ == 1 || tensor.shape().depth_ == 3);
-    const int mat_type = tensor.shape().depth_ == 1 ? CV_8UC1 : CV_8UC3;
-
-    // convert fdeep::tensor5 to cv::Mat (tensor to image2)
-    const cv::Mat image2(
-                cv::Size(tensor.shape().width_, tensor.shape().height_), mat_type);
-    fdeep::tensor5_into_bytes(tensor,
-                              image2.data, image2.rows * image2.cols * image2.channels());
-    cv::imshow("Input", greyed);
-
-    return tensor;
-}
-
+#include "roaddetector.h"
 
 int main(int argc, char *argv[])
 {
@@ -57,32 +21,32 @@ int main(int argc, char *argv[])
 
     QGuiApplication app(argc, argv);
 
-    // auto input = get_mnist_image_as_tensor("1.jpg");
+    RoadDetector detector;
+    detector.load_model("../resources/mini_model_yolike_roader.json");
 
-    const auto model = fdeep::load_model("mini_model_yolike_roader.json");
-
-    cv::VideoCapture in_video = cv::VideoCapture("test-road-1.mp4");
+    cv::VideoCapture in_video = cv::VideoCapture("../resources/test.mp4");
     cv::Mat in_frame;
 
-    while (in_video.read(in_frame))
-    {
+    constexpr int frame_divider = 10;
+    int frame_counter = 0;
+
+    while (in_video.read(in_frame)) {
+        if (frame_counter++ > frame_divider) {
+            frame_counter = 0;
+        } else {
+            continue;
+        }
+
         cv::imshow("Video", in_frame);
 
         auto start = std::chrono::system_clock::now();
 
-        const auto result = model.predict({to_vae_roader_input(in_frame)})[0]; // result is a vector of tensors!
+        const cv::Mat mask = detector.small_mask(in_frame);
 
-        const cv::Mat res_image(cv::Size(result.shape().width_,
-                                         result.shape().height_),
-                                result.shape().depth_ == 1 ? CV_8UC1 : CV_8UC3);
+        // const cv::Mat drawn = detector.main_mask_contour(mask);
+        cv::imshow("Result", mask);
 
-        fdeep::tensor5_into_bytes(result,
-                                  res_image.data, res_image.rows * res_image.cols * res_image.channels());
-
-        cv::imshow("Result", res_image);
-
-
-        const auto key = cv::waitKey(5);
+        const auto key = cv::waitKey(1);
         if (key > 0) {
             break;
         }
