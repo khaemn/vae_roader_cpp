@@ -4,12 +4,12 @@ RoadDetector::RoadDetector()
 {
     using namespace cv;
 
-    constexpr int erosion_size = 9;
+    constexpr int erosion_size = 13;
     m_erode_kernel = getStructuringElement( MORPH_ELLIPSE,
                                             Size( 2*erosion_size + 1, 2*erosion_size+1 ),
                                             Point( erosion_size, erosion_size ) );
 
-    constexpr int dilation_size = 7;
+    constexpr int dilation_size = 9;
     m_dilate_kernel = getStructuringElement( MORPH_ELLIPSE,
                                              Size( 2*dilation_size + 1, 2*dilation_size+1 ),
                                              Point( dilation_size, dilation_size ) );
@@ -25,6 +25,7 @@ fdeep::tensor5 RoadDetector::as_vaeroader_input(const cv::Mat &input)
     cv::Mat greyed;
     cv::cvtColor(input, greyed, CV_RGB2GRAY);
     cv::resize(greyed, greyed, cv::Size(NN_WIDTH, NN_HEIGHT));
+    cv::equalizeHist(greyed, greyed);
 
     return fdeep::tensor5_from_bytes(greyed.ptr(),
                                      greyed.rows, greyed.cols, greyed.channels());;
@@ -52,7 +53,7 @@ void RoadDetector::postprocess_mask(cv::Mat &input)
 
 void RoadDetector::refine_mask(cv::Mat &input)
 {
-    cv::threshold(input, input, 100, 255, cv::THRESH_BINARY);
+    cv::threshold(input, input, 150, 255, cv::THRESH_BINARY);
     cv::dilate(input, input, m_dilate_kernel);
     cv::erode(input, input, m_erode_kernel);
     //    cv::dilate(input, input, m_dilate_kernel);

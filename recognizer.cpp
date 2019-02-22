@@ -153,5 +153,5 @@ void Recognizer::setCamera(QQuickItem* ptr)
 
 std::vector<bbox_t> Recognizer::recognize(const Mat &input, float thres)
 {
-    return m_detector->detect(input, 0.7);
+    return m_detector->detect(input, thres);
 }
