@@ -88,13 +88,13 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
 
     RoadDetector detector;
-    detector.load_model("../resources/ext_model_yolike_roader.json");
+    detector.load_model("../resources/pipe_model_yolike_roader.json");
 
     Recognizer recognizer;
 
     //std::string filepath ("../resources/video/kiev/kiev4.mp4");
     //std::string filepath ("../resources/video/test/test-road-3.mp4");
-    std::string filepath ("../resources/video/road10.mp4");
+    std::string filepath ("../resources/video/road13.mp4");
 
     cv::VideoCapture in_video = cv::VideoCapture(filepath);
     float framerate = in_video.get(CV_CAP_PROP_FRAME_COUNT);
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     cv::Mat in_frame;
 
     constexpr int frame_divider = 0;
-    constexpr int starting_frame = 150;//4100;
+    constexpr int starting_frame = 350;//4100;
     constexpr int total_frames = 200;
     int frame_counter = 0;
     int curr_frame = 0;
@@ -159,11 +159,6 @@ int main(int argc, char *argv[])
         std::vector<bbox_t> left_res = recognizer.recognize(left_half, 0.35);
         std::vector<bbox_t> center_res = recognizer.recognize(center_part, 0.35);
         std::vector<bbox_t> right_res = recognizer.recognize(right_half, 0.35);
-//        for(auto elem : right_res) {
-//            elem.y += vertical_offset;
-//            elem.x += hor_half;
-//            recs.push_back(elem);
-//        }
 
         drawRecognized(in_frame, left_res, 0, vertical_offset, 80, 80, 200);
         drawRecognized(in_frame, center_res, third, vertical_offset, 40, 40, 50);

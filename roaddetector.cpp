@@ -24,7 +24,7 @@ fdeep::tensor5 RoadDetector::as_vaeroader_input(const cv::Mat &input)
 {
     cv::Mat greyed;
     cv::cvtColor(input, greyed, CV_RGB2GRAY);
-    cv::resize(greyed, greyed, cv::Size(NN_WIDTH, NN_HEIGHT));
+    cv::resize(greyed, greyed, cv::Size(AUTOENCODER_WIDTH, AUTOENCODER_HEIGHT));
     cv::equalizeHist(greyed, greyed);
 
     return fdeep::tensor5_from_bytes(greyed.ptr(),
@@ -56,8 +56,6 @@ void RoadDetector::refine_mask(cv::Mat &input)
     cv::threshold(input, input, 150, 255, cv::THRESH_BINARY);
     cv::dilate(input, input, m_dilate_kernel);
     cv::erode(input, input, m_erode_kernel);
-    //    cv::dilate(input, input, m_dilate_kernel);
-    //    cv::erode(input, input, m_erode_kernel);
 }
 
 void RoadDetector::crop_with_black(cv::Mat &input, size_t border_thickness)
@@ -142,8 +140,6 @@ std::vector<cv::Point> RoadDetector::main_mask_contour(const cv::Mat &mask)
     Canny( mask, canny_output, thresh, thresh*2, 3 );
     /// Find all contours
     findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
-
-    // imshow("Canned", canny_output);
 
     /// Find the biggest contour
     int biggest_contour_index = -1;

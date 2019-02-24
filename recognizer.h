@@ -28,7 +28,6 @@
 //#pragma comment(lib, "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v9.1/lib/x64/cudart.lib")
 //static std::shared_ptr<image_t> device_ptr(NULL, [](void *img) { cudaDeviceReset(); });
 
-#define OPENCV
 #include "yolo_v2_class.hpp"    // imported functions from DLL
 
 #include <opencv2/core/core.hpp>
