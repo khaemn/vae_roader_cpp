@@ -58,7 +58,6 @@ void drawRecognized(cv::Mat& in_frame,
             }
             int obj_scale = obj_size * 3 / min_width;
             int line_thickness = std::max(1, std::min(15, obj_scale));
-            // qDebug() << "Obj scale: " << obj_scale << ", line thick " << line_thickness;
             rectangle(in_frame, Rect(horizontal_offset + elem.x,
                                      elem.y + vertical_offset,
                                      elem.w,
@@ -112,8 +111,9 @@ int main(int argc, char *argv[])
     cv::Mat in_frame;
 
     constexpr int frame_divider = 0;
+    constexpr int starting_frame = 150;//4100;
+    constexpr int total_frames = 200;
     int frame_counter = 0;
-    int starting_frame = 0;//4100;
     int curr_frame = 0;
 
     const int road_outline_thickness = 3; // pixels
@@ -124,12 +124,17 @@ int main(int argc, char *argv[])
         } else {
             continue;
         }
-        if (curr_frame++ < starting_frame) {
-            if (curr_frame % 200 == 0) {
+        curr_frame++;
+        if (curr_frame < starting_frame) {
+            if (curr_frame % 100 == 0) {
                 qDebug() << "Skipped" << curr_frame << "of" << starting_frame << "frames...";
             }
             continue;
         }
+        if (curr_frame > (starting_frame + total_frames)) {
+            break;
+        }
+
         auto start = std::chrono::system_clock::now();
 
         auto road_shape = detector.approx_road_shape(in_frame, 2.);
