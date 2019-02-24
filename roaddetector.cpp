@@ -53,7 +53,7 @@ void RoadDetector::postprocess_mask(cv::Mat &input)
 
 void RoadDetector::refine_mask(cv::Mat &input)
 {
-    cv::threshold(input, input, 150, 255, cv::THRESH_BINARY);
+    cv::threshold(input, input, m_refine_threshold, m_max_rgb, cv::THRESH_BINARY);
     cv::dilate(input, input, m_dilate_kernel);
     cv::erode(input, input, m_erode_kernel);
 }
@@ -72,15 +72,40 @@ void RoadDetector::crop_with_black(cv::Mat &input, size_t border_thickness)
     cv::rectangle(input, tl, br, black);
 }
 
-std::vector<cv::Point> RoadDetector::approx(const std::vector<cv::Point> &shape, float epsilon)
+std::vector<cv::Point> RoadDetector::approx(const std::vector<cv::Point> &shape)
 {
     using namespace cv;
 
     std::vector<cv::Point> approximated;
     if (shape.size() > 3) {
-        approxPolyDP(shape, approximated, epsilon, false);
+        approxPolyDP(shape, approximated, m_approx_epsilon, false);
     }
     return approximated;
+}
+
+std::vector<cv::Point> RoadDetector::resize_contour(const std::vector<cv::Point> &input, int width, int height)
+{
+    const float vert_scale = (height * 1.0) / AUTOENCODER_HEIGHT;
+    const float hor_scale = (width * 1.0) / AUTOENCODER_WIDTH;
+
+    std::vector<cv::Point> result;
+    result.reserve(input.size());
+    for (const auto& point : input) {
+        int scaled_x = std::min(width - 1, static_cast<int>(point.x * hor_scale));
+        int scaled_y = std::min(height - 1, static_cast<int>(point.y * vert_scale));
+        result.emplace_back(cv::Point(scaled_x, scaled_y));
+    }
+    return result;
+}
+
+void RoadDetector::set_approx_epsilon(float approx_epsilon)
+{
+    m_approx_epsilon = approx_epsilon;
+}
+
+void RoadDetector::set_refine_threshold(int refine_threshold)
+{
+    m_refine_threshold = refine_threshold;
 }
 
 cv::Mat RoadDetector::predict(const cv::Mat &input)
@@ -95,7 +120,7 @@ cv::Mat RoadDetector::full_mask(const cv::Mat &input)
 
     cv::Mat mask = small_mask(input);
 
-    cv::resize(mask, mask, cv::Size(orig_width, orig_height), 0,0, cv::INTER_LANCZOS4);
+    cv::resize(mask, mask, cv::Size(orig_width, orig_height), 0, 0, cv::INTER_LANCZOS4);
 
     refine_mask(mask);
 
@@ -113,12 +138,14 @@ cv::Mat RoadDetector::small_mask(const cv::Mat &input)
 
 std::vector<cv::Point> RoadDetector::road_shape(const cv::Mat &input)
 {
-    return main_mask_contour(full_mask(input));
+    return resize_contour(main_mask_contour(small_mask(input)),
+                          input.cols,
+                          input.rows);
 }
 
-std::vector<cv::Point> RoadDetector::approx_road_shape(const cv::Mat &input, float epsilon)
+std::vector<cv::Point> RoadDetector::approx_road_shape(const cv::Mat &input)
 {
-    return approx(road_shape(input), epsilon);
+    return approx(road_shape(input));
 }
 
 std::vector<cv::Point> RoadDetector::main_mask_contour(const cv::Mat &mask)
@@ -127,8 +154,6 @@ std::vector<cv::Point> RoadDetector::main_mask_contour(const cv::Mat &mask)
     using namespace std;
 
     static constexpr size_t thresh = 100;
-    static constexpr size_t max_thresh = 255;
-    static constexpr size_t cropping_offset = 2; // pixels
 
     Mat canny_output = mask;
     vector<vector<Point> > contours;
@@ -139,7 +164,7 @@ std::vector<cv::Point> RoadDetector::main_mask_contour(const cv::Mat &mask)
     /// Detect edges using canny
     Canny( mask, canny_output, thresh, thresh*2, 3 );
     /// Find all contours
-    findContours( canny_output, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+    findContours( canny_output, contours, CV_RETR_TREE, CV_CHAIN_APPROX_NONE, Point(0, 0) );
 
     /// Find the biggest contour
     int biggest_contour_index = -1;

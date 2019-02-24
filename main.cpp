@@ -89,17 +89,18 @@ int main(int argc, char *argv[])
 
     RoadDetector detector;
     detector.load_model("../resources/pipe_model_yolike_roader.json");
+    detector.set_approx_epsilon(2.);
 
     Recognizer recognizer;
 
     //std::string filepath ("../resources/video/kiev/kiev4.mp4");
     //std::string filepath ("../resources/video/test/test-road-3.mp4");
-    std::string filepath ("../resources/video/road13.mp4");
+    std::string filepath ("../resources/video/road4.mp4");
 
     cv::VideoCapture in_video = cv::VideoCapture(filepath);
     float framerate = in_video.get(CV_CAP_PROP_FRAME_COUNT);
     Size out_size(in_video.get(CV_CAP_PROP_FRAME_WIDTH), in_video.get(CV_CAP_PROP_FRAME_HEIGHT));
-    VideoWriter writer("../resources/out.avi",
+    VideoWriter writer("../resources/out2.avi",
                        CV_FOURCC('X', 'V', 'I', 'D'),
                        15.,
                        out_size,
@@ -137,7 +138,7 @@ int main(int argc, char *argv[])
 
         auto start = std::chrono::system_clock::now();
 
-        auto road_shape = detector.approx_road_shape(in_frame, 2.);
+        auto road_shape = detector.approx_road_shape(in_frame);
 
         if (!road_shape.empty()) {
             std::vector<std::vector<Point>> shapes { road_shape };

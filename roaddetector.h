@@ -6,6 +6,7 @@
 #include <vector>
 
 // Frugally deep is required to be installed
+// https://github.com/Dobiasd/frugally-deep/blob/master/INSTALL.md
 #include <fdeep/fdeep.hpp>
 
 // OpenCV is required to be installed
@@ -43,10 +44,13 @@ public:
     /// @returns OpenCV point vector with the main (largest by area) contour,
     ///          found in the recognized road mask and approximated by polyline
     ///          to reduce points count
-    std::vector<cv::Point> approx_road_shape(const cv::Mat& input, float epsilon=10);
+    std::vector<cv::Point> approx_road_shape(const cv::Mat& input);
 
     static const int AUTOENCODER_HEIGHT = 180;
     static const int AUTOENCODER_WIDTH = 320;
+
+    void set_refine_threshold(int refine_threshold);
+    void set_approx_epsilon(float approx_epsilon);
 
 private:
     /// @param[in] input OpenCV mat with original frame from car camera
@@ -67,9 +71,13 @@ private:
 
     void postprocess_mask(cv::Mat &input);
     void refine_mask(cv::Mat &input);
-    void crop_with_black(cv::Mat& input, size_t border_thickness = 3);
+    void crop_with_black(cv::Mat& input, size_t border_thickness = 1);
 
-    std::vector<cv::Point> approx(const std::vector<cv::Point>& shape, float epsilon=10.);
+    std::vector<cv::Point> approx(const std::vector<cv::Point>& shape);
+
+    /// Resizes given road contour form native
+    /// autoencoder resolution to given size
+    std::vector<cv::Point> resize_contour(const std::vector<cv::Point>& input, int width, int height);
 
 private:
     std::unique_ptr<fdeep::model> m_model { nullptr };
@@ -77,6 +85,14 @@ private:
 
     cv::Mat m_erode_kernel;
     cv::Mat m_dilate_kernel;
+
+    /// OpenCV RGB threshold for primary mask refinement;
+    int m_refine_threshold = 50;
+
+    /// Epsilon (pixel distance) for approximation algorithm
+    float m_approx_epsilon = 5.;
+
+    const int m_max_rgb = 255;
 };
 
 #endif // ROADDETECTOR_H
