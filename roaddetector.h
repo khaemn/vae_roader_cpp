@@ -46,6 +46,7 @@ public:
     ///          to reduce points count
     std::vector<cv::Point> approx_road_shape(const cv::Mat& input);
 
+    /// Model input resolution is defined by Keras model.
     static const int AUTOENCODER_HEIGHT = 180;
     static const int AUTOENCODER_WIDTH = 320;
 
@@ -61,7 +62,7 @@ private:
     /// @param[in] input OpenCV mat with road mask (white - road, black - else)
     /// @returns OpenCV point vector with the main (largest by area) contour,
     ///          found in the recognized road mask.
-    std::vector<cv::Point> main_mask_contour(const cv::Mat& mask);
+    std::vector<cv::Point> main_mask_contour(const cv::Mat &mask);
 
     fdeep::tensor5 as_vaeroader_input(const cv::Mat& input);
 

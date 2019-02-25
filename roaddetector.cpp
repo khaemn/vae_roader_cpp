@@ -85,8 +85,8 @@ std::vector<cv::Point> RoadDetector::approx(const std::vector<cv::Point> &shape)
 
 std::vector<cv::Point> RoadDetector::resize_contour(const std::vector<cv::Point> &input, int width, int height)
 {
-    const float vert_scale = (height * 1.0) / AUTOENCODER_HEIGHT;
-    const float hor_scale = (width * 1.0) / AUTOENCODER_WIDTH;
+    const float vert_scale = height / AUTOENCODER_HEIGHT;
+    const float hor_scale = width / AUTOENCODER_WIDTH;
 
     std::vector<cv::Point> result;
     result.reserve(input.size());
@@ -129,7 +129,11 @@ cv::Mat RoadDetector::full_mask(const cv::Mat &input)
 
 cv::Mat RoadDetector::small_mask(const cv::Mat &input)
 {
-    cv::Mat _small_mask = as_cv_mat(raw_predict(as_vaeroader_input(input)));
+    using namespace cv;
+    Mat _small_mask = as_cv_mat(raw_predict(as_vaeroader_input(input)));
+
+    // Model prediction is not exactly equal to its input. Unfortunately.
+    resize(_small_mask, _small_mask, Size(AUTOENCODER_WIDTH, AUTOENCODER_HEIGHT));
 
     refine_mask(_small_mask);
 
@@ -153,20 +157,15 @@ std::vector<cv::Point> RoadDetector::main_mask_contour(const cv::Mat &mask)
     using namespace cv;
     using namespace std;
 
-    static constexpr size_t thresh = 100;
-
-    Mat canny_output = mask;
+    Mat temp = mask.clone();
     vector<vector<Point> > contours;
-    vector<Vec4i> hierarchy;
 
-    /// Crop plot to achieve visible border for a contour
-    crop_with_black(canny_output);
-    /// Detect edges using canny
-    Canny( mask, canny_output, thresh, thresh*2, 3 );
-    /// Find all contours
-    findContours( canny_output, contours, CV_RETR_TREE, CV_CHAIN_APPROX_NONE, Point(0, 0) );
+    // Crop plot to achieve visible border for a contour
+    crop_with_black(temp);
 
-    /// Find the biggest contour
+    findContours( temp, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE );
+
+    // Find the biggest contour
     int biggest_contour_index = -1;
     float last_area = 0.;
     for( size_t i = 0; i < contours.size(); i++ ) {
