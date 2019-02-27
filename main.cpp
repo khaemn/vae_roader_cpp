@@ -19,6 +19,7 @@
 
 static const cv::Scalar road_outline_color( 255, 0, 100 );
 static const cv::Scalar red_color( 0, 0, 255 );
+static const cv::Scalar yellow_color( 0, 255, 255 );
 static const cv::Scalar grey_color( 100, 100, 100 );
 static const cv::Scalar black_color( 0, 0, 0 );
 static const cv::Scalar white_color( 255, 255, 255 );
@@ -99,7 +100,13 @@ int main(int argc, char *argv[])
         {"../resources/video/kiev/kiev4.mp4"},
         {"../resources/video/kiev/kiev2.mp4"},
         {"../resources/video/kiev/kiev1.mp4"},
-        {"../resources/video/road10.mp4"},
+        {"../resources/video/road1.mp4"},
+        {"../resources/video/road2.mp4"},
+        {"../resources/video/road3.mp4"},
+        {"../resources/video/road4.mp4"},
+        {"../resources/video/road5.mp4"},
+        {"../resources/video/road6.mp4"},
+        {"../resources/video/road7.mp4"},
         //{"../resources/video/test/test-road-1.mp4"},
     };
 
@@ -116,8 +123,8 @@ int main(int argc, char *argv[])
     cv::Mat in_frame;
 
     constexpr int frame_divider = 0;
-    constexpr int starting_frame = 0;//3500;//4100;
-    constexpr int total_frames = 500;
+    constexpr int starting_frame = 300;//3500;//4100;
+    constexpr int total_frames = 300;
 
     for (const auto& filepath: filepaths) {
         int frame_counter = 0;
@@ -146,9 +153,10 @@ int main(int argc, char *argv[])
             Mat shape = in_frame.clone();
             if (!road_shape.empty()) {
                 std::vector<std::vector<Point>> shapes { road_shape };
-                drawContours( shape, shapes, 0, road_outline_color, -1/*road_outline_thickness*/);
+                drawContours( shape, shapes, 0, road_outline_color, -1);
                 static constexpr float alpha = 0.3;
                 addWeighted(shape, alpha, in_frame, 1 - alpha, 0, in_frame);
+                drawContours( in_frame, shapes, 0, yellow_color, 1);
             }
 
             size_t hor_half = (in_frame.cols / 2) - 1;
@@ -189,7 +197,9 @@ int main(int argc, char *argv[])
                     1.5,
                     road_outline_color);
 
-            writer.write(in_frame);
+            if (writer.isOpened()) {
+                writer.write(in_frame);
+            }
 
             cv::imshow("Result", in_frame);
 
